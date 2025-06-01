@@ -1,0 +1,7 @@
+{
+    "name": "yt-transcript-api",
+    "version": "0.1",
+    "buildTag": "python:3.11",
+    "entryPoint": "main.py"
+  }
+  
