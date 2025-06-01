@@ -1,28 +1,19 @@
+from flask import Flask, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
-from apify import Actor
 
-async def main():
-    async with Actor:
-        input_data = await Actor.get_input()
-        video_id = input_data.get('videoId')
+app = Flask(__name__)
 
-        print(f"📥 Received input: videoId = {video_id}")
+@app.route('/transcript', methods=['GET'])
+def get_transcript():
+    video_id = request.args.get('videoId')
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        text_only = " ".join([entry['text'] for entry in transcript])
+        return jsonify({'videoId': video_id, 'transcript': text_only})
+    except (TranscriptsDisabled, NoTranscriptFound):
+        return jsonify({'videoId': video_id, 'transcript': None, 'error': 'Transcript not available'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        try:
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            print(f"✅ Transcript fetched. {len(transcript)} segments")
-            text_only = " ".join([entry['text'] for entry in transcript])
-            await Actor.push_data({'videoId': video_id, 'transcript': text_only})
-            print("📤 Transcript pushed to dataset.")
-        except (TranscriptsDisabled, NoTranscriptFound):
-            await Actor.push_data({'videoId': video_id, 'transcript': None, 'error': 'Transcript not available'})
-            print("⚠️ Transcript not available.")
-        except Exception as e:
-            await Actor.push_data({'videoId': video_id, 'error': str(e)})
-            print(f"❌ Error: {str(e)}")
-
-        await Actor.exit()
-
-
-import asyncio
-asyncio.run(main())
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
