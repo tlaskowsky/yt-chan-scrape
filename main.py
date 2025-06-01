@@ -22,3 +22,7 @@ async def main():
             print(f"❌ Error: {str(e)}")
 
         await Actor.exit()
+
+
+import asyncio
+asyncio.run(main())
